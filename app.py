@@ -33,9 +33,6 @@ else:
 	server.secret_key = os.environ.get('secret_key', 'secret')
 
 
-
-#Penultimate digit of password is client
-#Final digit is permissions level
 if local_version:	
 	app = dash.Dash('Tav Dash')
 else:
