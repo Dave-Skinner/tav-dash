@@ -41,6 +41,26 @@ else:
 	at_config["base_id"]=os.environ["base_id"]
 	at_config["api_key"]=os.environ["airtable_api_key"]
 
+
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>Taverages</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+        </footer>
+    </body>
+</html>
+'''
+
 @functools32.lru_cache(maxsize=32)
 def getBattingDataframe():
 	#print at_config
