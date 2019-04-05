@@ -32,7 +32,7 @@ else:
 	server = Flask('Tav Dash')
 	server.secret_key = os.environ.get('secret_key', 'secret')
 
-
+at_config={}
 if local_version:	
 	app = dash.Dash('Tav Dash')
 else:
