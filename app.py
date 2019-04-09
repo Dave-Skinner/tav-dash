@@ -18,24 +18,21 @@ import functools32
 import collections
 
 
-local_version = False
+local_version = True
 
 if local_version:
 
-	json_file = "config/airtable.json"
+	json_file = "../config/airtable.json"
 	this_dir = os.path.dirname(__file__)
 	config_filename = os.path.join(this_dir, json_file)
 	config_file = open(config_filename)
 	at_config = json.load(config_file)
 	config_file.close()
+	app = dash.Dash('Tav Dash')
 else:
 	server = Flask('Tav Dash')
 	server.secret_key = os.environ.get('secret_key', 'secret')
-
-at_config={}
-if local_version:	
-	app = dash.Dash('Tav Dash')
-else:
+	at_config={}
 	app = dash.Dash('Tav Dash', server=server)
 	app.config.supress_callback_exceptions = True	
 	at_config["base_id"]=os.environ["base_id"]
@@ -453,12 +450,12 @@ def updateBowlingInningsGraph(df_player):
 			                legend=dict(orientation="h",
 		                                x=0,
 		                                y=1.1),
-			                font=dict(family='Poppins', size=15, color='#000000'),
+			                 font=dict(family='Arial', size=15, color='#000000'),
 			                hovermode='closest',
 			                margin=dict(t=50),
 			                xaxis=dict(
 			                        tickfont=dict(
-			                                family='Poppins',
+			                                family='Arial',
 			                                size=14,
 			                                color='#000000'
 			                            ),
@@ -466,7 +463,7 @@ def updateBowlingInningsGraph(df_player):
 			                yaxis=dict(
 			                        #range=y_axis_range,
 			                        tickfont=dict(
-			                                family='Poppins',
+			                                family='Arial',
 			                                size=14,
 			                                color='#000000'
 			                            ),
