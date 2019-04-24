@@ -281,7 +281,6 @@ class AirTable(Airtable):
 												  'photo_url'])
 
 
-
 	def getBowlingData(self,all_records):
 
 		data_list = []

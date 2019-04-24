@@ -66,7 +66,7 @@ def getBattingDataframe():
 	df = batting_airtable.getAllBattingDataFromBattingTable()
 	return df
 
-df_batting = getBattingDataframe()
+
 
 @functools32.lru_cache(maxsize=32)
 def getBowlingDataframe():
@@ -76,20 +76,19 @@ def getBowlingDataframe():
 	df = bowling_airtable.getAllBowlingDataFromBowlingTable()
 	return df
 
-df_bowling = getBowlingDataframe()
+
 
 
 seasons = ['2018','2019','All']
 match_types = ['All', '20 Overs', 'Full length']
 
 def getMasthead():
-	player_names = df_batting['name'].unique()
-	player_names.sort()
+
 	return html.Div([
 		#html.H1("Batting", className='masthead__title t-sans t-title'),
 		html.Div(
 			dcc.Dropdown(id='player-selection', 
-						options=[{'label': i, 'value': i} for i in player_names],
+						#options=[{'label': i, 'value': i} for i in player_names],
 						placeholder='Choose Player...'),
 			className='masthead__column_1',
 			id='player-selection-div'
@@ -115,11 +114,13 @@ def getMasthead():
 	], className='masthead l-grid')
 
 app.layout = html.Div([
+		dcc.Location(id='url', refresh=False),
 		html.Div([
 					getMasthead(),
 					html.Div(id='batting-stats-div',className='tavs__batting-stats'),
 					html.Div(id='timeline-graph',className='tavs__batting-graph'),
-					html.Div(id='mod-graph',className='tavs__batting-mod-graph')
+					html.Div(id='mod-graph',className='tavs__batting-mod-graph'),
+					#html.Div(id='batting-pos-graph',className='tavs__batting-pos-graph')
 
 		], className='l-subgrid'),
 		html.Div([
@@ -132,7 +133,16 @@ app.layout = html.Div([
 '''*********************************************************************************************************8
 	GET DATA
 *****************************************************************************************************************'''
+@app.callback(
+	Output('player-selection', 'options'),
+	[Input('url', 'pathname')])
+def playerSelection(url):
 
+	df_batting = getBattingDataframe()
+	player_names = df_batting['name'].unique()
+	player_names.sort()
+
+	return [{'label': i, 'value': i} for i in player_names]
 
 @app.callback(
 	Output('batting-stats-div', 'children'),
@@ -143,6 +153,7 @@ def populateBattingStats(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_batting = getBattingDataframe()
 	df_player = df_batting[df_batting['name'] == player]
 
 	if season:
@@ -154,7 +165,7 @@ def populateBattingStats(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
@@ -248,6 +259,7 @@ def updateDismissalMethods(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_batting = getBattingDataframe()
 	df_player = df_batting[df_batting['name'] == player]
 
 	if season:
@@ -259,7 +271,7 @@ def updateDismissalMethods(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
@@ -275,6 +287,52 @@ def updateDismissalMethods(player,
 		             config={'displayModeBar': False},
 		             id='bat-m-graph')
 
+
+'''@app.callback(
+	Output('batting-pos-graph', 'children'),
+	[Input('player-selection', 'value'),
+	Input('season-selection', 'value'),
+	Input('match-type-selection', 'value')])
+def updateBattingPositionAverage(player,
+						 season,
+						 match_type):
+	if player is None: return None
+	df_batting = getBattingDataframe()
+	df_player = df_batting[df_batting['name'] == player]
+
+	if season:
+		if season != "All":
+			df_player = df_player[df_player['season'] == season]
+
+	if match_type:
+		if match_type != "All":
+			if match_type == "20 Overs":
+				df_player = df_player[df_player['match_type'] == match_type]
+			else:
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
+
+	if df_player.empty: return None
+
+	mods=[]
+	weights=[]
+	for i in range(1,11):
+		df_pos = df_player[df_player['batting_order'] == i]
+		runs = df_pos['runs'].sum()
+		outs = df_pos['out_bool'].sum()
+		if outs:
+			average = float(runs)/float(outs)
+		else:
+			average = 0.0
+
+		mods.append(i)
+		weights.append(average)
+
+	print mods
+	print weights
+
+	return dcc.Graph(figure=getBarChart(mods,weights,bg_colour=True),
+		             config={'displayModeBar': False},
+		             id='bat-p-graph')'''
 
 def updateBattingInningsGraph(df_player):
 	df = df_player.dropna(subset = ['runs'])
@@ -347,6 +405,7 @@ def updateBattingInningsTimeline(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_batting = getBattingDataframe()
 	df_player = df_batting[df_batting['name'] == player]
 	if season:
 		if season != "All":
@@ -357,7 +416,7 @@ def updateBattingInningsTimeline(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
@@ -377,6 +436,7 @@ def populateBowlingStats(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_bowling = getBowlingDataframe()
 	df_player = df_bowling[df_bowling['name'] == player]
 	if season:
 		if season != "All":
@@ -387,7 +447,7 @@ def populateBowlingStats(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
@@ -486,6 +546,7 @@ def updateBowlingInningsTimeline(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_bowling = getBowlingDataframe()
 	df_player = df_bowling[df_bowling['name'] == player]
 	if season:
 		if season != "All":
@@ -496,7 +557,7 @@ def updateBowlingInningsTimeline(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
@@ -514,6 +575,7 @@ def updateBowlingDismissalMethods(player,
 						 season,
 						 match_type):
 	if player is None: return None
+	df_bowling = getBowlingDataframe()
 	df_player = df_bowling[df_bowling['name'] == player]
 	if season:
 		if season != "All":
@@ -524,7 +586,7 @@ def updateBowlingDismissalMethods(player,
 			if match_type == "20 Overs":
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
-				df_player = df_player[df_player['match_type'] != match_type]
+				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
 	if df_player.empty: return None
 
