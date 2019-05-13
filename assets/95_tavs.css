@@ -81,6 +81,14 @@
     text-align:center;
 }
 
+.hidden-grid{
+    display: none;
+}
+
+.shown-grid{
+    display: block;
+}
+
 
 
 

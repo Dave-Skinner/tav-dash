@@ -227,6 +227,10 @@ class AirTable(Airtable):
 			match_type = self.getField(record,'Match Type')[0].encode('utf-8')
 			season = self.getField(record,'Season')[0].encode('utf-8')
 			try:
+				balls_faced = int(self.getField(record,'Balls Faced'))
+			except ValueError:
+				balls_faced = None
+			try:
 				photo_url = self.getField(record,'Photo')[0]["url"]
 			except IndexError:
 				photo_url = None			
@@ -243,7 +247,8 @@ class AirTable(Airtable):
 							  innings_bool,
 							  match_type,
 							  season,
-							  photo_url])
+							  photo_url,
+							  balls_faced])
 
 		return data_list 
 
@@ -278,7 +283,8 @@ class AirTable(Airtable):
 												  'innings_bool',
 												  'match_type',
 												  'season',
-												  'photo_url'])
+												  'photo_url',
+												  'balls_faced'])
 
 
 	def getBowlingData(self,all_records):
@@ -329,7 +335,7 @@ class AirTable(Airtable):
 			try:
 				photo_url = self.getField(record,'Photo')[0]["url"]
 			except IndexError:
-				photo_url = None			
+				photo_url = None
 
 			data_list.append([name,
 							  match,
@@ -385,3 +391,86 @@ class AirTable(Airtable):
 												  'match_type',
 												  'season',
 												  'photo_url'])
+
+
+
+
+	def getMatchesData(self,all_records):
+
+		data_list = []
+		for record in all_records["records"]:
+			opposition = self.getField(record,'Opposition').encode('utf-8')
+			ta = datetime.datetime.strptime(self.getField(record,'Date'),"%Y-%m-%d")
+			date = datetime.datetime(ta.year,ta.month,ta.day,ta.hour,ta.minute)
+			ground = self.getField(record,'Ground (String)').encode('utf-8')
+			result = self.getField(record,'Result').encode('utf-8')
+			bat_first = self.getField(record,'Bat First').encode('utf-8')
+			try:
+				tav_runs = int(self.getField(record,'Tav Runs'))
+			except ValueError:
+				continue
+			try:
+				tav_wickets_down = int(self.getField(record,'Tav Wickets Down'))
+			except ValueError:
+				tav_wickets_down = None
+			try:
+				oppo_runs = int(self.getField(record,'Oppo Runs'))
+			except ValueError:
+				oppo_runs = None
+			try:
+				oppo_wickets_down = int(self.getField(record,'Oppo Wickets Down'))
+			except ValueError:
+				oppo_wickets_down = None
+			match_type = self.getField(record,'Match Type').encode('utf-8')
+			season = self.getField(record,'Season').encode('utf-8')
+			captains_tankard = self.getField(record,'Captains Tankard (String)').encode('utf-8')
+			match_report = self.getField(record,'Match Report').encode('utf-8')		
+			
+
+			data_list.append([opposition,
+							  date,
+							  ground,
+							  result,
+							  bat_first,
+							  tav_runs,
+							  tav_wickets_down,
+							  oppo_runs,
+							  oppo_wickets_down,
+							  match_type,
+							  season,
+							  captains_tankard,
+							  match_report])
+
+		return data_list 
+
+	def getAllMatchDataFromMatchesTable(self):
+
+		all_records = self.getAllTableViewRecords("MATCHES","viwETmTbL8do9Ur1c")
+		data_list = self.getMatchesData(all_records)
+		if 'offset' in all_records:
+			offset = all_records['offset'].encode('utf-8')
+		else:
+			offset = None
+		while offset:
+			all_records = self.getAllTableViewRecordsFromOffset("MATCHES","viwETmTbL8do9Ur1c",offset)
+			temp_data_list = self.getMatchesData(all_records)
+			data_list.extend(temp_data_list)
+		
+			if 'offset' in all_records:
+				offset = all_records['offset'].encode('utf-8')
+			else:
+				break
+
+		return pd.DataFrame(data_list, columns=['opposition',
+												  'date',
+												  'ground',
+												  'result',
+												  'bat_first',
+												  'tav_runs',
+												  'tav_wickets_down',
+												  'oppo_runs',
+												  'oppo_wickets_down',
+												  'match_type',
+												  'season',
+												  'captains_tankard',
+												  'match_report'])

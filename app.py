@@ -175,6 +175,12 @@ def populateBattingStats(player,
 	outs = df_player['out_bool'].sum()
 	sixes = df_player['sixes'].sum()
 	fours = df_player['fours'].sum()
+	balls_faced = df_player['balls_faced'].sum()
+	strike_rate = 100.0*float(runs)/float(balls_faced)
+	if season!="2019":
+		strike_rate_md = dcc.Markdown("Strike Rate: -")
+	else:
+		strike_rate_md = dcc.Markdown("Strike Rate: " + "{:.2f}".format(strike_rate))
 
 	if outs:
 		average = float(runs)/float(outs)
@@ -199,6 +205,7 @@ def populateBattingStats(player,
 								top_score_md,
 								dcc.Markdown("Total Fours: " + "{:,}".format(int(fours))),
 								dcc.Markdown("Total Sixes: " + "{:,}".format(int(sixes))),
+								strike_rate_md,
 							], className='tavs-unit__extra-content'),
 						],
 						className='tavs-unit',
