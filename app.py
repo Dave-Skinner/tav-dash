@@ -4,6 +4,7 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table as dt
 import pandas as pd
 import plotly.graph_objs as go
 
@@ -22,13 +23,14 @@ local_version = False
 
 if local_version:
 
-	json_file = "../config/airtable.json"
+	json_file = "../../config/airtable.json"
 	this_dir = os.path.dirname(__file__)
 	config_filename = os.path.join(this_dir, json_file)
 	config_file = open(config_filename)
 	at_config = json.load(config_file)
 	config_file.close()
 	app = dash.Dash('Tav Dash')
+	app.config.supress_callback_exceptions = True
 else:
 	server = Flask('Tav Dash')
 	server.secret_key = os.environ.get('secret_key', 'secret')
@@ -53,6 +55,7 @@ app.index_string = '''
         <footer>
             {%config%}
             {%scripts%}
+            {%renderer%}
         </footer>
     </body>
 </html>
@@ -81,22 +84,24 @@ def getBowlingDataframe():
 
 seasons = ['2018','2019','All']
 match_types = ['All', '20 Overs', 'Full length']
+disciplines = ['Batting', 'Bowling']
 
 def getMasthead():
 
 	return html.Div([
-		#html.H1("Batting", className='masthead__title t-sans t-title'),
 		html.Div(
-			dcc.Dropdown(id='player-selection', 
-						#options=[{'label': i, 'value': i} for i in player_names],
-						placeholder='Choose Player...'),
+			dcc.Dropdown(id='discipline-selection', 
+						options=[{'label': i, 'value': i} for i in disciplines],
+						value='Batting',
+						placeholder='Choose Discipline...'),
 			className='masthead__column_1',
-			id='player-selection-div'
+			id='discipline-selection-div'
 		),
 		html.Div(
 			dcc.Dropdown(
 				id='season-selection',
 				options=[{'label': i, 'value': i} for i in seasons],
+				value='2019',
 				placeholder='Choose Season...'
 			),
 			className='masthead__column_2',
@@ -111,6 +116,80 @@ def getMasthead():
 			className='masthead__column_3',
 			id='match-type-selection-div'
 		),
+		html.Div([
+			dt.DataTable(
+				id='player-table',
+				columns=[
+			        {"name": "Name", "id": "name"},
+			        {"name": "Innings", "id": "innings"},
+			        {"name": "Runs", "id": "bat_runs"},
+			        {"name": "Average", "id": "bat_average"},
+			        {"name": "HS", "id": "top_score"},
+			        {"name": "Fours", "id": "fours"},
+			        {"name": "Sixes", "id": "sixes"},
+			        {"name": "Strike Rate", "id": "bat_strike_rate"},
+			        {"name": "Overs", "id": "overs","hidden":True},
+			        {"name": "Wickets", "id": "wickets","hidden":True},
+			        {"name": "Runs", "id": "bowl_runs","hidden":True},
+			        {"name": "Average", "id": "bowl_average","hidden":True},
+			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
+			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},			        
+			    ],
+			    style_cell_conditional=[
+					{'if': {'column_id': 'name'},
+					 'width': '27%'},
+					{'if': {'column_id': 'innings'},
+					 'width': '10%'},
+					{'if': {'column_id': 'bat_runs'},
+					 'width': '10%'},
+					{'if': {'column_id': 'bat_average'},
+					 'width': '10%'},
+					{'if': {'column_id': 'top_score'},
+					 'width': '10%'},
+					{'if': {'column_id': 'fours'},
+					 'width': '10%'},
+					{'if': {'column_id': 'sixes'},
+					 'width': '10%'},
+					{'if': {'column_id': 'bat_strike_rate'},
+					 'width': '10%'},
+					{'if': {'column_id': 'overs'},
+					 'width': '12%'},
+					{'if': {'column_id': 'wickets'},
+					 'width': '12%'},
+					{'if': {'column_id': 'bowl_runs'},
+					 'width': '12%'},
+					{'if': {'column_id': 'bowl_average'},
+					 'width': '12%'},
+					{'if': {'column_id': 'economy_rate'},
+					 'width': '12%'},
+					{'if': {'column_id': 'bowl_strike_rate'},
+					 'width': '12%'},
+				],
+				style_header={
+			        'fontWeight': 'bold',
+				    'font-family':'sans-serif',
+				    'fontSize':15,
+				    'background': 'rgb(242, 242, 242)'
+			    },
+			    style_table={
+				    'maxHeight': 345,
+				    'overflowY': 'auto',
+				},
+				style_cell={
+				    'textAlign': 'center',
+				    'font-family':'sans-serif',
+				    'fontSize':20
+				},
+				editable=False,
+				n_fixed_rows=1,
+				sorting=True,
+				sorting_type="single",
+				row_selectable="single",
+				selected_rows=[0],
+				style_as_list_view=True				
+			)
+		],id='player-table-div',
+			className='tavs__player-table')
 	], className='masthead l-grid')
 
 app.layout = html.Div([
@@ -120,7 +199,6 @@ app.layout = html.Div([
 					html.Div(id='batting-stats-div',className='tavs__batting-stats'),
 					html.Div(id='timeline-graph',className='tavs__batting-graph'),
 					html.Div(id='mod-graph',className='tavs__batting-mod-graph'),
-					#html.Div(id='batting-pos-graph',className='tavs__batting-pos-graph')
 
 		], className='l-subgrid'),
 		html.Div([
@@ -133,28 +211,209 @@ app.layout = html.Div([
 '''*********************************************************************************************************8
 	GET DATA
 *****************************************************************************************************************'''
+
+
+def getBattingDataTable(season,
+						match_type):
+
+	df_batting = getBattingDataframe()	
+	df_bowling = getBowlingDataframe()
+
+	if season:
+		if season != "All":
+			df_batting = df_batting[df_batting['season'] == season]
+			df_bowling = df_bowling[df_bowling['season'] == season]
+	if match_type:
+		if match_type != "All":
+			if match_type == "20 Overs":
+				df_batting = df_batting[df_batting['match_type'] == match_type]
+				df_bowling = df_bowling[df_bowling['match_type'] == match_type]
+			else:
+				df_batting = df_batting[df_batting['match_type'] != "20 Overs"]
+				df_bowling = df_bowling[df_bowling['match_type'] != "20 Overs"]
+	if df_batting.empty: return None
+
+	data = []
+
+	for player in df_batting['name'].unique():
+		#print player
+		df_player = df_batting[df_batting['name'] == player]
+		innings = df_player['innings_bool'].sum()
+		runs = df_player['runs'].sum()
+		top_score = df_player['runs'].max()
+		outs = df_player['out_bool'].sum()
+		
+		if outs:
+			average = round(float(runs)/float(outs),2)
+		else:
+			average = None
+		sixes = df_player['sixes'].sum()
+		fours = df_player['fours'].sum()
+		balls_faced = df_player['balls_faced'].sum()
+		if balls_faced:
+			strike_rate = round(100.0*float(runs)/float(balls_faced),2)
+		else:
+			strike_rate = 0.0
+		if season!="2019":
+			strike_rate = "-"
+
+		df_player = df_bowling[df_bowling['name'] == player]
+		overs = df_player['overs'].sum()
+		if overs:
+			bowl_runs = df_player['runs'].sum()
+			wickets = df_player['wickets'].sum()
+
+			economy = round(float(bowl_runs)/float(overs),2)
+			
+			if wickets:
+				bowl_average = round(float(bowl_runs)/float(wickets),2)
+				bowl_strike_rate = round(6.0*float(overs)/float(wickets),2)
+			else:
+				bowl_average = None
+				bowl_strike_rate = None
+		else:
+			bowl_runs = None
+			wickets = None
+			economy = None
+			bowl_average = None
+			bowl_strike_rate = None
+	 
+		#print average
+		data.append([player,
+					 innings,
+					 runs,
+					 average,
+					 top_score,
+					 fours,
+					 sixes,
+					 strike_rate,
+					 overs,
+					 bowl_runs,
+					wickets,
+					economy,
+					bowl_average,
+					bowl_strike_rate])
+
+	print data
+	df_data = pd.DataFrame(data,columns=["name",
+									  "innings",
+									  "bat_runs",
+									  "bat_average",
+									  "top_score",
+									  "fours",
+									  "sixes",
+									  "bat_strike_rate",
+									  "overs",
+									 "bowl_runs",
+									"wickets",
+									"economy_rate",
+									"bowl_average",
+									"bowl_strike_rate"])
+	df_data = df_data.sort_values('innings',ascending=0)
+
+	data_dict = df_data.to_dict('records')
+
+	return data_dict
+
+
 @app.callback(
-	Output('player-selection', 'options'),
-	[Input('url', 'pathname')])
-def playerSelection(url):
+	Output('player-table', 'columns'),
+	[Input('discipline-selection', 'value')
+])
+def playerTableColumns(discipline):
+	if discipline == "Batting":
+		return [
+			        {"name": "Name", "id": "name"},
+			        {"name": "Innings", "id": "innings"},
+			        {"name": "Runs", "id": "bat_runs"},
+			        {"name": "Average", "id": "bat_average"},
+			        {"name": "HS", "id": "top_score"},
+			        {"name": "Fours", "id": "fours"},
+			        {"name": "Sixes", "id": "sixes"},
+			        {"name": "Strike Rate", "id": "bat_strike_rate"},
+			        {"name": "Overs", "id": "overs","hidden":True},
+			        {"name": "Wickets", "id": "wickets","hidden":True},
+			        {"name": "Runs", "id": "bowl_runs","hidden":True},
+			        {"name": "Average", "id": "bowl_average","hidden":True},
+			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
+			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},			        
+			    ]
+	if discipline == "Bowling":
+		return [
+			        {"name": "Name", "id": "name"},
+			        {"name": "Innings", "id": "innings","hidden":True},
+			        {"name": "Runs", "id": "bat_runs","hidden":True},
+			        {"name": "Average", "id": "bat_average","hidden":True},
+			        {"name": "HS", "id": "top_score","hidden":True},
+			        {"name": "Fours", "id": "fours","hidden":True},
+			        {"name": "Sixes", "id": "sixes","hidden":True},
+			        {"name": "Strike Rate", "id": "bat_strike_rate","hidden":True},
+			        {"name": "Overs", "id": "overs"},
+			        {"name": "Wickets", "id": "wickets"},
+			        {"name": "Runs", "id": "bowl_runs"},
+			        {"name": "Average", "id": "bowl_average"},
+			        {"name": "Economy Rate", "id": "economy_rate"},
+			        {"name": "Strike Rate", "id": "bowl_strike_rate"},			        
+			    ]
+	return [
+			        {"name": "Name", "id": "name"},
+			        {"name": "Innings", "id": "innings","hidden":True},
+			        {"name": "Runs", "id": "bat_runs","hidden":True},
+			        {"name": "Average", "id": "bat_average","hidden":True},
+			        {"name": "HS", "id": "top_score","hidden":True},
+			        {"name": "Fours", "id": "fours","hidden":True},
+			        {"name": "Sixes", "id": "sixes","hidden":True},
+			        {"name": "Strike Rate", "id": "bat_strike_rate","hidden":True},
+			        {"name": "Overs", "id": "overs","hidden":True},
+			        {"name": "Wickets", "id": "wickets","hidden":True},
+			        {"name": "Runs", "id": "bowl_runs","hidden":True},
+			        {"name": "Average", "id": "bowl_average","hidden":True},
+			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
+			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True}
+			]
 
-	df_batting = getBattingDataframe()
-	player_names = df_batting['name'].unique()
-	player_names.sort()
+@app.callback(
+	Output('player-table', 'sorting_settings'),
+	[Input('discipline-selection', 'value')
+])
+def playerTableColumnDirection(discipline):
+	if discipline == "Batting":
+		return [{'column_id':'bat_runs','direction':'desc'}]
+	if discipline == "Bowling":
+		return [{'column_id':'wickets','direction':'desc'}]
+	return None 
 
-	return [{'label': i, 'value': i} for i in player_names]
+	
+@app.callback(
+	Output('player-table', 'data'),
+	[Input('season-selection', 'value'),
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')
+])
+def playerTableRender(season,
+						 match_type,
+						 discipline):
+	return getBattingDataTable(season, match_type)
+	
 
 @app.callback(
 	Output('batting-stats-div', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def populateBattingStats(player,
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def populateBattingStats(table_data,
+						 player,
 						 season,
-						 match_type):
-	if player is None: return None
+						 match_type,
+						 discipline):
+	if discipline != "Batting": return None
+	if not player: return None
+	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
-	df_player = df_batting[df_batting['name'] == player]
+	df_player = df_batting[df_batting['name'] == player_name]
 
 	if season:
 		if season != "All":
@@ -197,7 +456,7 @@ def populateBattingStats(player,
 					html.Div(
 						[
 							#html.Img(src=df_player['photo_url'].values.tolist()[0], className='tavs-unit__media'),
-							html.H2('Batting Stats', className='tavs-stat-title'),
+							html.H2(player_name + ' Batting', className='tavs-stat-title'),
 							html.Div([
 								dcc.Markdown("No. Innings: " + "{:,}".format(int(innings))),
 								dcc.Markdown("Total Runs: " + "{:,}".format(int(runs))),
@@ -259,15 +518,22 @@ def getBarChart(words,
 
 @app.callback(
 	Output('mod-graph', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def updateDismissalMethods(player,
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def updateDismissalMethods(table_data,
+						 player,
 						 season,
-						 match_type):
-	if player is None: return None
+						 match_type,
+						 discipline):
+	if discipline != "Batting": return None
+	if not player: return None
+	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
-	df_player = df_batting[df_batting['name'] == player]
+	df_player = df_batting[df_batting['name'] == player_name]
 
 	if season:
 		if season != "All":
@@ -295,51 +561,6 @@ def updateDismissalMethods(player,
 		             id='bat-m-graph')
 
 
-'''@app.callback(
-	Output('batting-pos-graph', 'children'),
-	[Input('player-selection', 'value'),
-	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def updateBattingPositionAverage(player,
-						 season,
-						 match_type):
-	if player is None: return None
-	df_batting = getBattingDataframe()
-	df_player = df_batting[df_batting['name'] == player]
-
-	if season:
-		if season != "All":
-			df_player = df_player[df_player['season'] == season]
-
-	if match_type:
-		if match_type != "All":
-			if match_type == "20 Overs":
-				df_player = df_player[df_player['match_type'] == match_type]
-			else:
-				df_player = df_player[df_player['match_type'] != "20 Overs"]
-
-	if df_player.empty: return None
-
-	mods=[]
-	weights=[]
-	for i in range(1,11):
-		df_pos = df_player[df_player['batting_order'] == i]
-		runs = df_pos['runs'].sum()
-		outs = df_pos['out_bool'].sum()
-		if outs:
-			average = float(runs)/float(outs)
-		else:
-			average = 0.0
-
-		mods.append(i)
-		weights.append(average)
-
-	print mods
-	print weights
-
-	return dcc.Graph(figure=getBarChart(mods,weights,bg_colour=True),
-		             config={'displayModeBar': False},
-		             id='bat-p-graph')'''
 
 def updateBattingInningsGraph(df_player):
 	df = df_player.dropna(subset = ['runs'])
@@ -405,15 +626,23 @@ def updateBattingInningsGraph(df_player):
 
 @app.callback(
 	Output('timeline-graph', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def updateBattingInningsTimeline(player,
-						 season,
-						 match_type):
-	if player is None: return None
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def updateBattingInningsTimeline(table_data,
+								 player,
+								 season,
+								 match_type,
+								 discipline):
+	if discipline != "Batting": return None
+	if not player: return None
+	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
-	df_player = df_batting[df_batting['name'] == player]
+	df_player = df_batting[df_batting['name'] == player_name]
+
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
@@ -436,15 +665,23 @@ def updateBattingInningsTimeline(player,
 
 @app.callback(
 	Output('bowling-stats-div', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def populateBowlingStats(player,
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def populateBowlingStats(table_data,
+						 player,
 						 season,
-						 match_type):
-	if player is None: return None
+						 match_type,
+						 discipline):
+	if discipline != "Bowling": return None
+	if not player: return None
+	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
-	df_player = df_bowling[df_bowling['name'] == player]
+	df_player = df_bowling[df_bowling['name'] == player_name]
+
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
@@ -479,7 +716,7 @@ def populateBowlingStats(player,
 
 	return html.Div([
 					html.Div(
-						[	html.H2('Bowling Stats', className='tavs-stat-title'),
+						[	html.H2(player_name + ' Bowling', className='tavs-stat-title'),
 							html.Div([
 								dcc.Markdown("Overs: " + "{:.1f}".format(overs)),
 								dcc.Markdown("Wickets: " + "{:,}".format(int(wickets))),
@@ -546,15 +783,23 @@ def updateBowlingInningsGraph(df_player):
 
 @app.callback(
 	Output('bowling-timeline-graph', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def updateBowlingInningsTimeline(player,
-						 season,
-						 match_type):
-	if player is None: return None
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def updateBowlingInningsTimeline(table_data,
+								player,
+								 season,
+								 match_type,
+								 discipline):
+	if discipline != "Bowling": return None
+	if not player: return None	
+	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
-	df_player = df_bowling[df_bowling['name'] == player]
+	df_player = df_bowling[df_bowling['name'] == player_name]
+
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
@@ -575,15 +820,23 @@ def updateBowlingInningsTimeline(player,
 
 @app.callback(
 	Output('bowling-mod-graph', 'children'),
-	[Input('player-selection', 'value'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value')])
-def updateBowlingDismissalMethods(player,
-						 season,
-						 match_type):
-	if player is None: return None
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value')])
+def updateBowlingDismissalMethods(table_data,
+									player,
+									 season,
+									 match_type,
+									 discipline):
+	if discipline != "Bowling": return None
+	if not player: return None	
+	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
+	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
-	df_player = df_bowling[df_bowling['name'] == player]
+	df_player = df_bowling[df_bowling['name'] == player_name]
+
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
