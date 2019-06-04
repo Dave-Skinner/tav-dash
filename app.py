@@ -23,7 +23,7 @@ local_version = False
 
 if local_version:
 
-	json_file = "../../config/airtable.json"
+	json_file = "../config/airtable.json"
 	this_dir = os.path.dirname(__file__)
 	config_filename = os.path.join(this_dir, json_file)
 	config_file = open(config_filename)
@@ -133,11 +133,12 @@ def getMasthead():
 			        {"name": "Runs", "id": "bowl_runs","hidden":True},
 			        {"name": "Average", "id": "bowl_average","hidden":True},
 			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},			        
+			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},
+			        {"name": "Catches", "id": "catches"},			        
 			    ],
 			    style_cell_conditional=[
 					{'if': {'column_id': 'name'},
-					 'width': '27%'},
+					 'width': '20%'},
 					{'if': {'column_id': 'innings'},
 					 'width': '10%'},
 					{'if': {'column_id': 'bat_runs'},
@@ -164,6 +165,8 @@ def getMasthead():
 					 'width': '12%'},
 					{'if': {'column_id': 'bowl_strike_rate'},
 					 'width': '12%'},
+					{'if': {'column_id': 'catches'},
+					 'width': '7%'},
 				],
 				style_header={
 			        'fontWeight': 'bold',
@@ -217,20 +220,25 @@ def getBattingDataTable(season,
 						match_type):
 
 	df_batting = getBattingDataframe()	
+	df_catching = df_batting[df_batting['catcher'] != ""]
+	df_batting = df_batting[df_batting['team'] == "Railway Taverners CC"]
 	df_bowling = getBowlingDataframe()
 
 	if season:
 		if season != "All":
 			df_batting = df_batting[df_batting['season'] == season]
 			df_bowling = df_bowling[df_bowling['season'] == season]
+			df_catching = df_catching[df_catching['season'] == season]
 	if match_type:
 		if match_type != "All":
 			if match_type == "20 Overs":
 				df_batting = df_batting[df_batting['match_type'] == match_type]
 				df_bowling = df_bowling[df_bowling['match_type'] == match_type]
+				df_catching = df_catching[df_catching['match_type'] == match_type]
 			else:
 				df_batting = df_batting[df_batting['match_type'] != "20 Overs"]
 				df_bowling = df_bowling[df_bowling['match_type'] != "20 Overs"]
+				df_catching = df_catching[df_catching['match_type'] != "20 Overs"]
 	if df_batting.empty: return None
 
 	data = []
@@ -277,6 +285,8 @@ def getBattingDataTable(season,
 			economy = None
 			bowl_average = None
 			bowl_strike_rate = None
+
+		catches = len(df_catching[df_catching['catcher'] == player].index)
 	 
 		#print average
 		data.append([player,
@@ -292,7 +302,8 @@ def getBattingDataTable(season,
 					wickets,
 					economy,
 					bowl_average,
-					bowl_strike_rate])
+					bowl_strike_rate,
+					catches])
 
 	print data
 	df_data = pd.DataFrame(data,columns=["name",
@@ -308,7 +319,8 @@ def getBattingDataTable(season,
 									"wickets",
 									"economy_rate",
 									"bowl_average",
-									"bowl_strike_rate"])
+									"bowl_strike_rate",
+									"catches"])
 	df_data = df_data.sort_values('innings',ascending=0)
 
 	data_dict = df_data.to_dict('records')
@@ -336,7 +348,8 @@ def playerTableColumns(discipline):
 			        {"name": "Runs", "id": "bowl_runs","hidden":True},
 			        {"name": "Average", "id": "bowl_average","hidden":True},
 			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},			        
+			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},
+			        {"name": "Catches", "id": "catches"},			        			        
 			    ]
 	if discipline == "Bowling":
 		return [
@@ -353,7 +366,8 @@ def playerTableColumns(discipline):
 			        {"name": "Runs", "id": "bowl_runs"},
 			        {"name": "Average", "id": "bowl_average"},
 			        {"name": "Economy Rate", "id": "economy_rate"},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate"},			        
+			        {"name": "Strike Rate", "id": "bowl_strike_rate"},		
+			        {"name": "Catches", "id": "catches"},			        	        
 			    ]
 	return [
 			        {"name": "Name", "id": "name"},

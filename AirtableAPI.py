@@ -233,7 +233,10 @@ class AirTable(Airtable):
 			try:
 				photo_url = self.getField(record,'Photo')[0]["url"]
 			except IndexError:
-				photo_url = None			
+				photo_url = None	
+
+			catcher = self.getField(record,'Catcher Name').encode('utf-8')
+			team = self.getField(record,'Team Name').encode('utf-8')
 
 			data_list.append([name,
 							  match,
@@ -248,21 +251,23 @@ class AirTable(Airtable):
 							  match_type,
 							  season,
 							  photo_url,
-							  balls_faced])
+							  balls_faced,
+							  catcher,
+							  team])
 
 		return data_list 
 
 
 	def getAllBattingDataFromBattingTable(self):
 
-		all_records = self.getAllTableViewRecords("BATTING","viweRctLZv37TEtMZ")
+		all_records = self.getAllTableViewRecords("BATTING","viwgwYkOLRMiPvJ1J")
 		data_list = self.getBattingData(all_records)
 		if 'offset' in all_records:
 			offset = all_records['offset'].encode('utf-8')
 		else:
 			offset = None
 		while offset:
-			all_records = self.getAllTableViewRecordsFromOffset("BATTING","viweRctLZv37TEtMZ",offset)
+			all_records = self.getAllTableViewRecordsFromOffset("BATTING","viwgwYkOLRMiPvJ1J",offset)
 			temp_data_list = self.getBattingData(all_records)
 			data_list.extend(temp_data_list)
 		
@@ -284,7 +289,9 @@ class AirTable(Airtable):
 												  'match_type',
 												  'season',
 												  'photo_url',
-												  'balls_faced'])
+												  'balls_faced',
+												  'catcher',
+												  'team'])
 
 
 	def getBowlingData(self,all_records):
