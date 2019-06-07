@@ -336,7 +336,7 @@ class AirTable(Airtable):
 				sixes = None
 			bowling_order = int(self.getField(record,'Bowling Order'))
 			dismissal_types = self.getField(record,'Dismissal Types')
-			print dismissal_types
+			#print dismissal_types
 			match_type = self.getField(record,'Match Type')[0].encode('utf-8')
 			season = self.getField(record,'Season')[0].encode('utf-8')
 			try:

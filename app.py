@@ -221,7 +221,10 @@ def getBattingDataTable(season,
 
 	df_batting = getBattingDataframe()	
 	df_catching = df_batting[df_batting['catcher'] != ""]
-	df_batting = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_pres = df_batting[df_batting['team'] == "President's XI "]
+	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
+	df_batting = pd.concat([df_tavs, df_pres, df_moors]) 
 	df_bowling = getBowlingDataframe()
 
 	if season:
@@ -305,7 +308,7 @@ def getBattingDataTable(season,
 					bowl_strike_rate,
 					catches])
 
-	print data
+	#print data
 	df_data = pd.DataFrame(data,columns=["name",
 									  "innings",
 									  "bat_runs",
