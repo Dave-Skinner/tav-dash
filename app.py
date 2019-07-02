@@ -83,8 +83,9 @@ def getBowlingDataframe():
 
 
 seasons = ['2018','2019','All']
-match_types = ['All', '20 Overs', 'Full length']
+match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
+inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
 
 def getMasthead():
 
@@ -111,10 +112,22 @@ def getMasthead():
 			dcc.Dropdown(
 				id='match-type-selection',
 				options=[{'label': i, 'value': i} for i in match_types],
-				placeholder='Choose Match Type...'
+				value='Full Length',
+				clearable=False
 			),
 			className='masthead__column_3',
 			id='match-type-selection-div'
+		),
+		html.Div(
+			dcc.Dropdown(
+				id='inter-tav-selection',
+				options=[{'label': i, 'value': i} for i in inter_tav_types],
+				value='Railway Taverners CC',
+				clearable=False,
+				placeholder='Choose Match Type...'
+			),
+			className='masthead__column_4',
+			id='inter-tav-selection-div'
 		),
 		html.Div([
 			dt.DataTable(
@@ -217,21 +230,36 @@ app.layout = html.Div([
 
 
 def getBattingDataTable(season,
-						match_type):
+						match_type,
+						inter_tav_type):
 
 	df_batting = getBattingDataframe()	
-	df_catching = df_batting[df_batting['catcher'] != ""]
-	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_pres = df_batting[df_batting['team'] == "President's XI "]
-	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
-	df_batting = pd.concat([df_tavs, df_pres, df_moors]) 
 	df_bowling = getBowlingDataframe()
+	df_catching = df_batting[df_batting['catcher'] != ""]
+
+	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_pres = df_batting[df_batting['team'] == "President's XI"]
+	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi])
+		df_catching1 = df_catching[df_catching['match'] == "President's XI"]
+		df_catching2 = df_catching[df_catching['match'] == "Andy James Invitational XI"]
+		df_catching = pd.concat([df_catching1, df_catching2]) 
+	else:
+		df_batting = df_tavs
+		df_catching = df_catching[df_catching['match'] != "President's XI"]
+		df_catching = df_catching[df_catching['match'] != "Andy James Invitational XI"]	
 
 	if season:
 		if season != "All":
 			df_batting = df_batting[df_batting['season'] == season]
 			df_bowling = df_bowling[df_bowling['season'] == season]
 			df_catching = df_catching[df_catching['season'] == season]
+	if df_batting.empty: return []
+
 	if match_type:
 		if match_type != "All":
 			if match_type == "20 Overs":
@@ -242,7 +270,7 @@ def getBattingDataTable(season,
 				df_batting = df_batting[df_batting['match_type'] != "20 Overs"]
 				df_bowling = df_bowling[df_bowling['match_type'] != "20 Overs"]
 				df_catching = df_catching[df_catching['match_type'] != "20 Overs"]
-	if df_batting.empty: return None
+	if df_batting.empty: return []
 
 	data = []
 
@@ -405,12 +433,14 @@ def playerTableColumnDirection(discipline):
 	Output('player-table', 'data'),
 	[Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')
 ])
 def playerTableRender(season,
 						 match_type,
-						 discipline):
-	return getBattingDataTable(season, match_type)
+						 discipline,
+						 inter_tav_type):
+	return getBattingDataTable(season, match_type,inter_tav_type)
 	
 
 @app.callback(
@@ -419,17 +449,31 @@ def playerTableRender(season,
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def populateBattingStats(table_data,
 						 player,
 						 season,
 						 match_type,
-						 discipline):
+						 discipline,
+						 inter_tav_type):
 	if discipline != "Batting": return None
 	if not player: return None
 	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
+	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_pres = df_batting[df_batting['team'] == "President's XI"]
+	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_batting = df_tavs
+
+	if df_batting.empty: return None
 	df_player = df_batting[df_batting['name'] == player_name]
 
 	if season:
@@ -464,29 +508,35 @@ def populateBattingStats(table_data,
 		average = 0.0
 
 	df_ts = df_player[df_player['runs'] == top_score]
-	if df_ts['out_bool'].values[0]:
-		top_score_md = dcc.Markdown("Highest Score: " + "{:,}".format(int(top_score)))
-	else:
-		top_score_md = dcc.Markdown("Highest Score: " + "{:,}".format(int(top_score)) + "*")
+	try:
+		if df_ts['out_bool'].values[0]:
+			top_score_md = dcc.Markdown("Highest Score: " + "{:,}".format(int(top_score)))
+		else:
+			top_score_md = dcc.Markdown("Highest Score: " + "{:,}".format(int(top_score)) + "*")
+	except IndexError:
+		top_score_md = dcc.Markdown("Highest Score: ")
 
-	return html.Div([
-					html.Div(
-						[
-							#html.Img(src=df_player['photo_url'].values.tolist()[0], className='tavs-unit__media'),
-							html.H2(player_name + ' Batting', className='tavs-stat-title'),
-							html.Div([
-								dcc.Markdown("No. Innings: " + "{:,}".format(int(innings))),
-								dcc.Markdown("Total Runs: " + "{:,}".format(int(runs))),
-								dcc.Markdown("Average: " + "{:.2f}".format(average)),
-								top_score_md,
-								dcc.Markdown("Total Fours: " + "{:,}".format(int(fours))),
-								dcc.Markdown("Total Sixes: " + "{:,}".format(int(sixes))),
-								strike_rate_md,
-							], className='tavs-unit__extra-content'),
-						],
-						className='tavs-unit',
-					),
-				], className='tavs-grid__unit tavs-grid__unit--half')
+	try:
+		return html.Div([
+						html.Div(
+							[
+								#html.Img(src=df_player['photo_url'].values.tolist()[0], className='tavs-unit__media'),
+								html.H2(player_name + ' Batting', className='tavs-stat-title'),
+								html.Div([
+									dcc.Markdown("No. Innings: " + "{:,}".format(int(innings))),
+									dcc.Markdown("Total Runs: " + "{:,}".format(int(runs))),
+									dcc.Markdown("Average: " + "{:.2f}".format(average)),
+									top_score_md,
+									dcc.Markdown("Total Fours: " + "{:,}".format(int(fours))),
+									dcc.Markdown("Total Sixes: " + "{:,}".format(int(sixes))),
+									strike_rate_md,
+								], className='tavs-unit__extra-content'),
+							],
+							className='tavs-unit',
+						),
+					], className='tavs-grid__unit tavs-grid__unit--half')
+	except (IndexError, ValueError):
+		return None
 
 def getBarChart(words,
 				 weights,
@@ -539,17 +589,32 @@ def getBarChart(words,
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def updateDismissalMethods(table_data,
 						 player,
 						 season,
 						 match_type,
-						 discipline):
+						 discipline,
+						 inter_tav_type):
 	if discipline != "Batting": return None
 	if not player: return None
 	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
+
+	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_pres = df_batting[df_batting['team'] == "President's XI"]
+	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_batting = df_tavs
+
+	if df_batting.empty: return None
 	df_player = df_batting[df_batting['name'] == player_name]
 
 	if season:
@@ -647,17 +712,32 @@ def updateBattingInningsGraph(df_player):
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def updateBattingInningsTimeline(table_data,
 								 player,
 								 season,
 								 match_type,
-								 discipline):
+								 discipline,
+								 inter_tav_type):
 	if discipline != "Batting": return None
 	if not player: return None
 	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
+
+	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+	df_pres = df_batting[df_batting['team'] == "President's XI"]
+	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_batting = df_tavs
+
+	if df_batting.empty: return None
 	df_player = df_batting[df_batting['name'] == player_name]
 
 	if season:
@@ -686,19 +766,34 @@ def updateBattingInningsTimeline(table_data,
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def populateBowlingStats(table_data,
 						 player,
 						 season,
 						 match_type,
-						 discipline):
+						 discipline,
+						 inter_tav_type):
 	if discipline != "Bowling": return None
 	if not player: return None
 	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
-	df_bowling = getBowlingDataframe()
-	df_player = df_bowling[df_bowling['name'] == player_name]
 
+	df_bowling = getBowlingDataframe()
+
+	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
+	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_bowling = df_tavs
+
+	df_player = df_bowling[df_bowling['name'] == player_name]
+		
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
@@ -804,17 +899,31 @@ def updateBowlingInningsGraph(df_player):
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def updateBowlingInningsTimeline(table_data,
 								player,
 								 season,
 								 match_type,
-								 discipline):
+								 discipline,
+								 inter_tav_type):
 	if discipline != "Bowling": return None
 	if not player: return None	
 	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
+
+	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
+	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_bowling = df_tavs
+
 	df_player = df_bowling[df_bowling['name'] == player_name]
 
 	if season:
@@ -841,17 +950,31 @@ def updateBowlingInningsTimeline(table_data,
      Input('player-table', "derived_virtual_selected_rows"),
 	Input('season-selection', 'value'),
 	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value')])
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
 def updateBowlingDismissalMethods(table_data,
 									player,
 									 season,
 									 match_type,
-									 discipline):
+									 discipline,
+									 inter_tav_type):
 	if discipline != "Bowling": return None
 	if not player: return None	
 	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
+	
+	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
+	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
+	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	if inter_tav_type == "All":
+		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+	elif inter_tav_type == "Inter Tavs":
+		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+	else:
+		df_bowling = df_tavs
+
 	df_player = df_bowling[df_bowling['name'] == player_name]
 
 	if season:

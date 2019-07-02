@@ -343,6 +343,7 @@ class AirTable(Airtable):
 				photo_url = self.getField(record,'Photo')[0]["url"]
 			except IndexError:
 				photo_url = None
+			team = self.getField(record,'Team Name').encode('utf-8')
 
 			data_list.append([name,
 							  match,
@@ -359,7 +360,8 @@ class AirTable(Airtable):
 							  dismissal_types,
 							  match_type,
 							  season,
-							  photo_url])
+							  photo_url,
+							  team])
 
 		return data_list 
 
@@ -397,7 +399,8 @@ class AirTable(Airtable):
 							  					  'dismissal_types',
 												  'match_type',
 												  'season',
-												  'photo_url'])
+												  'photo_url',
+												  'team'])
 
 
 
