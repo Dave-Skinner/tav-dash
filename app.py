@@ -63,7 +63,6 @@ app.index_string = '''
 
 @functools32.lru_cache(maxsize=32)
 def getBattingDataframe():
-	#print at_config
 	batting_airtable = airtable.AirTable(at_config)
 
 	df = batting_airtable.getAllBattingDataFromBattingTable()
@@ -73,7 +72,6 @@ def getBattingDataframe():
 
 @functools32.lru_cache(maxsize=32)
 def getBowlingDataframe():
-	#print at_config
 	bowling_airtable = airtable.AirTable(at_config)
 
 	df = bowling_airtable.getAllBowlingDataFromBowlingTable()
@@ -86,6 +84,7 @@ seasons = ['2018','2019','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
 inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
+inter_tav_teams = ["President's XI", "Andy James Invitational XI", "Railway Taverners XI"]
 
 def getMasthead():
 
@@ -237,21 +236,22 @@ def getBattingDataTable(season,
 	df_bowling = getBowlingDataframe()
 	df_catching = df_batting[df_batting['catcher'] != ""]
 
-	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_pres = df_batting[df_batting['team'] == "President's XI"]
-	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+
 	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
+		df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
+		df_batting = pd.concat([df_tavs, df_inter]) 
+		df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+		df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
+		df_bowling = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi])
-		df_catching1 = df_catching[df_catching['match'] == "President's XI"]
-		df_catching2 = df_catching[df_catching['match'] == "Andy James Invitational XI"]
-		df_catching = pd.concat([df_catching1, df_catching2]) 
+		df_batting = df_batting[df_batting['team'].isin(inter_tav_teams)]#pd.concat([df_pres, df_moors, df_tavs_xi])
+		df_bowling = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
+		df_catching = df_catching[df_catching['match'].isin(inter_tav_teams)]
 	else:
-		df_batting = df_tavs
-		df_catching = df_catching[df_catching['match'] != "President's XI"]
-		df_catching = df_catching[df_catching['match'] != "Andy James Invitational XI"]	
+		df_batting = df_batting[df_batting['team'] == "Railway Taverners CC"]
+		df_bowling = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+		df_catching = df_catching[~df_catching['match'].isin(inter_tav_teams)]
 
 	if season:
 		if season != "All":
@@ -275,7 +275,6 @@ def getBattingDataTable(season,
 	data = []
 
 	for player in df_batting['name'].unique():
-		#print player
 		df_player = df_batting[df_batting['name'] == player]
 		innings = df_player['innings_bool'].sum()
 		runs = df_player['runs'].sum()
@@ -319,7 +318,6 @@ def getBattingDataTable(season,
 
 		catches = len(df_catching[df_catching['catcher'] == player].index)
 	 
-		#print average
 		data.append([player,
 					 innings,
 					 runs,
@@ -336,7 +334,6 @@ def getBattingDataTable(season,
 					bowl_strike_rate,
 					catches])
 
-	#print data
 	df_data = pd.DataFrame(data,columns=["name",
 									  "innings",
 									  "bat_runs",
@@ -459,17 +456,16 @@ def populateBattingStats(table_data,
 						 inter_tav_type):
 	if discipline != "Batting": return None
 	if not player: return None
-	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
-	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
+	df_batting = pd.DataFrame(table_data)
+	player_name = df_batting.iloc[player[0]]["name"]
 	df_batting = getBattingDataframe()
+	
 	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_pres = df_batting[df_batting['team'] == "President's XI"]
-	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_batting = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_batting = df_inter
 	else:
 		df_batting = df_tavs
 
@@ -602,15 +598,13 @@ def updateDismissalMethods(table_data,
 	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
-
+	
 	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_pres = df_batting[df_batting['team'] == "President's XI"]
-	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_batting = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_batting = df_inter
 	else:
 		df_batting = df_tavs
 
@@ -725,15 +719,13 @@ def updateBattingInningsTimeline(table_data,
 	df_batting = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
-
+	
 	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_pres = df_batting[df_batting['team'] == "President's XI"]
-	df_moors = df_batting[df_batting['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_batting[df_batting['team'] == "Railway Taverners XI"]
+	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_batting = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_batting = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_batting = df_inter
 	else:
 		df_batting = df_tavs
 
@@ -780,15 +772,13 @@ def populateBowlingStats(table_data,
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 
 	df_bowling = getBowlingDataframe()
-
+	
 	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
-	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = df_inter
 	else:
 		df_bowling = df_tavs
 
@@ -912,15 +902,13 @@ def updateBowlingInningsTimeline(table_data,
 	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
-
+	
 	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
-	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = df_inter
 	else:
 		df_bowling = df_tavs
 
@@ -965,13 +953,11 @@ def updateBowlingDismissalMethods(table_data,
 	df_bowling = getBowlingDataframe()
 	
 	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_pres = df_bowling[df_bowling['team'] == "President's XI"]
-	df_moors = df_bowling[df_bowling['team'] == "Andy James Invitational XI"]
-	df_tavs_xi = df_bowling[df_bowling['team'] == "Railway Taverners XI"]
+	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_bowling = pd.concat([df_pres, df_moors, df_tavs_xi]) 
+		df_bowling = df_inter
 	else:
 		df_bowling = df_tavs
 
