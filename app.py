@@ -335,20 +335,20 @@ def getBattingDataTable(season,
 					catches])
 
 	df_data = pd.DataFrame(data,columns=["name",
-									  "innings",
-									  "bat_runs",
-									  "bat_average",
-									  "top_score",
-									  "fours",
-									  "sixes",
-									  "bat_strike_rate",
-									  "overs",
-									 "bowl_runs",
-									"wickets",
-									"economy_rate",
-									"bowl_average",
-									"bowl_strike_rate",
-									"catches"])
+										"innings",
+										"bat_runs",
+										"bat_average",
+										"top_score",
+										"fours",
+										"sixes",
+										"bat_strike_rate",
+										"overs",
+										"bowl_runs",
+										"wickets",
+										"economy_rate",
+										"bowl_average",
+										"bowl_strike_rate",
+										"catches"])
 	df_data = df_data.sort_values('innings',ascending=0)
 
 	data_dict = df_data.to_dict('records')
@@ -440,26 +440,13 @@ def playerTableRender(season,
 	return getBattingDataTable(season, match_type,inter_tav_type)
 	
 
-@app.callback(
-	Output('batting-stats-div', 'children'),
-	[Input('player-table', "derived_virtual_data"),
-     Input('player-table', "derived_virtual_selected_rows"),
-	Input('season-selection', 'value'),
-	Input('match-type-selection', 'value'),
-	Input('discipline-selection', 'value'),
-	Input('inter-tav-selection', 'value')])
-def populateBattingStats(table_data,
-						 player,
-						 season,
-						 match_type,
-						 discipline,
-						 inter_tav_type):
-	if discipline != "Batting": return None
-	if not player: return None
-	df_batting = pd.DataFrame(table_data)
-	player_name = df_batting.iloc[player[0]]["name"]
-	df_batting = getBattingDataframe()
-	
+
+def getBattingPlayer(df_batting,
+					 player_name,
+					 inter_tav_type,
+					 season,
+					 match_type):
+
 	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
 	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
@@ -482,6 +469,34 @@ def populateBattingStats(table_data,
 				df_player = df_player[df_player['match_type'] == match_type]
 			else:
 				df_player = df_player[df_player['match_type'] != "20 Overs"]
+
+	return df_player
+
+@app.callback(
+	Output('batting-stats-div', 'children'),
+	[Input('player-table', "derived_virtual_data"),
+     Input('player-table', "derived_virtual_selected_rows"),
+	Input('season-selection', 'value'),
+	Input('match-type-selection', 'value'),
+	Input('discipline-selection', 'value'),
+	Input('inter-tav-selection', 'value')])
+def populateBattingStats(table_data,
+						 player,
+						 season,
+						 match_type,
+						 discipline,
+						 inter_tav_type):
+	if discipline != "Batting": return None
+	if not player: return None
+	df_batting = pd.DataFrame(table_data)
+	player_name = df_batting.iloc[player[0]]["name"]
+	df_batting = getBattingDataframe()
+	
+	df_player = getBattingPlayer(df_batting,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
 
 	if df_player.empty: return None
 
@@ -599,28 +614,11 @@ def updateDismissalMethods(table_data,
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
 	
-	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
-	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_inter]) 
-	elif inter_tav_type == "Inter Tavs":
-		df_batting = df_inter
-	else:
-		df_batting = df_tavs
-
-	if df_batting.empty: return None
-	df_player = df_batting[df_batting['name'] == player_name]
-
-	if season:
-		if season != "All":
-			df_player = df_player[df_player['season'] == season]
-
-	if match_type:
-		if match_type != "All":
-			if match_type == "20 Overs":
-				df_player = df_player[df_player['match_type'] == match_type]
-			else:
-				df_player = df_player[df_player['match_type'] != "20 Overs"]
+	df_player = getBattingPlayer(df_batting,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
 
 	if df_player.empty: return None
 
@@ -720,18 +718,36 @@ def updateBattingInningsTimeline(table_data,
 	player_name = df_batting.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_batting = getBattingDataframe()
 	
-	df_tavs = df_batting[df_batting['team'] == "Railway Taverners CC"]
-	df_inter = df_batting[df_batting['team'].isin(inter_tav_teams)]
+	df_player = getBattingPlayer(df_batting,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
+
+	if df_player.empty: return None
+
+	return dcc.Graph(figure=updateBattingInningsGraph(df_player),
+		             config={'displayModeBar': False},
+		             id='bat-t-graph')
+
+
+def getBowlingPlayer(df_bowling,
+					 player_name,
+					 inter_tav_type,
+					 season,
+					 match_type):
+
+	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
+	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
 	if inter_tav_type == "All":
-		df_batting = pd.concat([df_tavs, df_inter]) 
+		df_bowling = pd.concat([df_tavs, df_inter]) 
 	elif inter_tav_type == "Inter Tavs":
-		df_batting = df_inter
+		df_bowling = df_inter
 	else:
-		df_batting = df_tavs
+		df_bowling = df_tavs
 
-	if df_batting.empty: return None
-	df_player = df_batting[df_batting['name'] == player_name]
-
+	df_player = df_bowling[df_bowling['name'] == player_name]
+		
 	if season:
 		if season != "All":
 			df_player = df_player[df_player['season'] == season]
@@ -743,14 +759,7 @@ def updateBattingInningsTimeline(table_data,
 			else:
 				df_player = df_player[df_player['match_type'] != "20 Overs"]
 
-	if df_player.empty: return None
-
-	return dcc.Graph(figure=updateBattingInningsGraph(df_player),
-		             config={'displayModeBar': False},
-		             id='bat-t-graph')
-
-
-
+	return df_player
 
 @app.callback(
 	Output('bowling-stats-div', 'children'),
@@ -773,27 +782,11 @@ def populateBowlingStats(table_data,
 
 	df_bowling = getBowlingDataframe()
 	
-	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
-	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_inter]) 
-	elif inter_tav_type == "Inter Tavs":
-		df_bowling = df_inter
-	else:
-		df_bowling = df_tavs
-
-	df_player = df_bowling[df_bowling['name'] == player_name]
-		
-	if season:
-		if season != "All":
-			df_player = df_player[df_player['season'] == season]
-
-	if match_type:
-		if match_type != "All":
-			if match_type == "20 Overs":
-				df_player = df_player[df_player['match_type'] == match_type]
-			else:
-				df_player = df_player[df_player['match_type'] != "20 Overs"]
+	df_player = getBowlingPlayer(df_bowling,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
 
 	if df_player.empty: return None
 
@@ -903,27 +896,11 @@ def updateBowlingInningsTimeline(table_data,
 	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
 	df_bowling = getBowlingDataframe()
 	
-	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
-	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_inter]) 
-	elif inter_tav_type == "Inter Tavs":
-		df_bowling = df_inter
-	else:
-		df_bowling = df_tavs
-
-	df_player = df_bowling[df_bowling['name'] == player_name]
-
-	if season:
-		if season != "All":
-			df_player = df_player[df_player['season'] == season]
-
-	if match_type:
-		if match_type != "All":
-			if match_type == "20 Overs":
-				df_player = df_player[df_player['match_type'] == match_type]
-			else:
-				df_player = df_player[df_player['match_type'] != "20 Overs"]
+	df_player = getBowlingPlayer(df_bowling,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
 
 	if df_player.empty: return None
 
@@ -948,31 +925,15 @@ def updateBowlingDismissalMethods(table_data,
 									 inter_tav_type):
 	if discipline != "Bowling": return None
 	if not player: return None	
-	df_bowling = pd.DataFrame(table_data)#getBattingDataframe()
-	player_name = df_bowling.iloc[player[0]]["name"]#df_batting[df_batting['name'] == player]
+	df_bowling = pd.DataFrame(table_data)
+	player_name = df_bowling.iloc[player[0]]["name"]
 	df_bowling = getBowlingDataframe()
 	
-	df_tavs = df_bowling[df_bowling['team'] == "Railway Taverners CC"]
-	df_inter = df_bowling[df_bowling['team'].isin(inter_tav_teams)]
-	if inter_tav_type == "All":
-		df_bowling = pd.concat([df_tavs, df_inter]) 
-	elif inter_tav_type == "Inter Tavs":
-		df_bowling = df_inter
-	else:
-		df_bowling = df_tavs
-
-	df_player = df_bowling[df_bowling['name'] == player_name]
-
-	if season:
-		if season != "All":
-			df_player = df_player[df_player['season'] == season]
-
-	if match_type:
-		if match_type != "All":
-			if match_type == "20 Overs":
-				df_player = df_player[df_player['match_type'] == match_type]
-			else:
-				df_player = df_player[df_player['match_type'] != "20 Overs"]
+	df_player = getBowlingPlayer(df_bowling,
+								 player_name,
+								 inter_tav_type,
+								 season,
+								 match_type)
 
 	if df_player.empty: return None
 
