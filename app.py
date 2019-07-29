@@ -111,7 +111,7 @@ def getMasthead():
 			dcc.Dropdown(
 				id='match-type-selection',
 				options=[{'label': i, 'value': i} for i in match_types],
-				value='Full Length',
+				value='All',
 				clearable=False
 			),
 			className='masthead__column_3',
