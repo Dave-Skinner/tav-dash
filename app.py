@@ -2,7 +2,6 @@
 
 from flask import Flask
 import dash
-import dash_auth
 
 import sys
 import os
