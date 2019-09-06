@@ -238,6 +238,16 @@ class AirTable(Airtable):
 			catcher = self.getField(record,'Catcher Name').encode('utf-8')
 			team = self.getField(record,'Team Name').encode('utf-8')
 
+			try:
+				fow_runs = int(self.getField(record,'Fall of Wicket (Runs)'))
+			except ValueError:
+				fow_runs = None
+
+			try:
+				fow_overs = float(self.getField(record,'Fall of Wicket (Overs)'))
+			except ValueError:
+				fow_overs = None
+
 			data_list.append([name,
 							  match,
 							  date,
@@ -253,7 +263,9 @@ class AirTable(Airtable):
 							  photo_url,
 							  balls_faced,
 							  catcher,
-							  team])
+							  team,
+							  fow_runs,
+							  fow_overs])
 
 		return data_list 
 
@@ -291,7 +303,9 @@ class AirTable(Airtable):
 												  'photo_url',
 												  'balls_faced',
 												  'catcher',
-												  'team'])
+												  'team',
+												  'fow_runs',
+												  'fow_overs'])
 
 
 	def getBowlingData(self,all_records):
@@ -434,7 +448,7 @@ class AirTable(Airtable):
 			match_type = self.getField(record,'Match Type').encode('utf-8')
 			season = self.getField(record,'Season').encode('utf-8')
 			captains_tankard = self.getField(record,'Captains Tankard (String)').encode('utf-8')
-			match_report = self.getField(record,'Match Report').encode('utf-8')		
+			match_report = self.getField(record,'Match Report')#.encode('utf-8')		
 			
 
 			data_list.append([opposition,
@@ -484,3 +498,5 @@ class AirTable(Airtable):
 												  'season',
 												  'captains_tankard',
 												  'match_report'])
+
+

@@ -3,13 +3,6 @@
 }
 
 
-.tavs__player-table {
-    font-family: 'Poppins', sans-serif;
-    margin-top: 10px;
-    z-index: 0;
-}
-
-
 .tavs__batting-stats {
     grid-column: 1 / span 2;
     margin-left: 20px;
@@ -59,7 +52,9 @@
 
 
 .bowling-grid{
-    margin-top: -40px;
+    background: rgb(242, 242, 242);
+
+    margin-top: -20px;
     margin-bottom: 20px;
 }
 
@@ -213,7 +208,7 @@
 .tavs-unit:hover *,
 .tavs-unit:active *,
 .tavs-unit:focus * {
-    color: #a35fe0;
+    color: #000000;
 }
 
 .tavs-unit__media-wrapper {
@@ -289,4 +284,10 @@
 
 .tavs-grid__unit--padded {
     padding: 0 15px 15px 15px;
+}
+
+.tavs-match_report {
+    font-family: 'Poppins', sans-serif;
+    overflow-y: auto;
+    height: 300px;
 }
