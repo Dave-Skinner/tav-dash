@@ -12,7 +12,7 @@ import AirtableAPI as airtable
 import functools32
 
 
-local_version = True
+local_version = False
 
 if local_version:
 
