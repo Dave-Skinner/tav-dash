@@ -20,7 +20,7 @@ import collections
 
 
 
-seasons = ['2018','2019','All']
+seasons = ['2018','2019','2020','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
 inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
