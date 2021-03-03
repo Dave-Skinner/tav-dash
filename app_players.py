@@ -19,7 +19,6 @@ import functools32
 import collections
 
 
-
 seasons = ['2018','2019','2020','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']

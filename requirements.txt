@@ -7,4 +7,4 @@ pandas==0.19.2
 plotly==3.4.0
 Flask==0.12.4
 gunicorn==19.7.1
-git+git://github.com/nicocanali/airtable-python.git
+airtable @ git+git://github.com/nicocanali/airtable-python.git@497c237fc5c369853ca9dac98dd3f45019cde60d
