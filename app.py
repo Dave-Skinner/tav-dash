@@ -60,7 +60,6 @@ def getMatchesDataframe():
 print "FUCK THIS SHIT"
 
 
-
 app.index_string = '''
 <!DOCTYPE html>
 <html>
