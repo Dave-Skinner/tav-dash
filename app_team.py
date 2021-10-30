@@ -15,7 +15,6 @@ import os
 import json
 import time
 
-import functools32
 import collections
 
 from app import app, getBattingDataframe, getBowlingDataframe, getMatchesDataframe
@@ -25,7 +24,7 @@ from header import getHeader
 
 
 
-seasons = ['2018','2019','All']
+seasons = ['2018','2019','2020','2021','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
 inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
@@ -48,7 +47,7 @@ def getTeamMasthead():
 					dcc.Dropdown(
 						id='season-selection-team',
 						options=[{'label': i, 'value': i} for i in seasons],
-						value='2019',
+						value='2021',
 						placeholder='Choose Season...'
 					),
 					className='masthead__column_2',
@@ -125,9 +124,9 @@ def getTeamMasthead():
 						    'fontSize':20
 						},
 						editable=False,
-						n_fixed_rows=1,
-						sorting=True,
-						sorting_type="single",
+						fixed_rows={'headers':True, 'data':1},
+						sort_action='native',
+						sort_mode="single",
 						row_selectable="single",
 						selected_rows=[0],
 						style_as_list_view=True				
@@ -228,7 +227,7 @@ def getTeamDataTable(season,
 def teamTableRender(season,
 					 match_type,
 					 inter_tav_type):
-	print match_type
+	print (match_type)
 	return getTeamDataTable(season, match_type,inter_tav_type)
 
 
@@ -376,7 +375,7 @@ def updateMatchInningsTimeline(table_data,
 	
 	try:
 		match_date = table_data[match_row[0]]['date']
-		print match_date
+		print (match_date)
 		df_innings = df_batting[df_batting['date'] == match_date[0]]#df_batting.iloc[match_date[0]]["date"]
 		#print "Innings",innings
 	except (IndexError, TypeError):
@@ -402,8 +401,8 @@ def updateMatchInningsGraph(df_match):
 		tav_overs = [0.0] + df_tavs["fow_overs"].values.tolist()
 		tav_overs = [x for x in tav_overs if str(x) != 'nan']
 		tav_overs.sort()
-		print tav_runs
-		print tav_overs
+		print (tav_runs)
+		print (tav_overs)
 		data.append(go.Scatter( x=tav_overs,
 					    y=tav_runs,
 					    mode='lines+markers',

@@ -8,7 +8,7 @@ import base64
 from app import app
 import app_team, app_players
 
-seasons = ['2018','2019','All']
+seasons = ['2018','2019','2020','2021','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
 inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
@@ -30,7 +30,7 @@ def getMasthead():
             dcc.Dropdown(
                 id='season-selection',
                 options=[{'label': i, 'value': i} for i in seasons],
-                value='2019',
+                value='2021',
                 placeholder='Choose Season...'
             ),
             className='masthead__column_2',
@@ -78,7 +78,7 @@ def display_page(pathname):
 
     if pathname == "/team": 
         layout = app_team.getLayout()
-        print "We here or what?"
+        print ("We here or what?")
         return layout
     if pathname == '/players':
         return app_players.getLayout()

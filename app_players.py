@@ -15,11 +15,10 @@ import os
 import json
 import time
 
-import functools32
 import collections
 
 
-seasons = ['2018','2019','2020','All']
+seasons = ['2018','2019','2020','2021','All']
 match_types = ['Full Length', '20 Overs','All']
 disciplines = ['Batting', 'Bowling']
 inter_tav_types = ["Railway Taverners CC","Inter Tavs","All"]
@@ -40,7 +39,7 @@ def getMasthead():
 			dcc.Dropdown(
 				id='season-selection',
 				options=[{'label': i, 'value': i} for i in seasons],
-				value='2019',
+				value='2021',
 				placeholder='Choose Season...'
 			),
 			className='masthead__column_2',
@@ -80,13 +79,13 @@ def getMasthead():
 			        {"name": "Sixes", "id": "sixes"},
 			        {"name": "Strike Rate", "id": "bat_strike_rate"},
 			        {"name": "Boundary %", "id": "boundary_perc"},
-			        {"name": "Overs", "id": "overs","hidden":True},
-			        {"name": "Wickets", "id": "wickets","hidden":True},
-			        {"name": "Runs", "id": "bowl_runs","hidden":True},
-			        {"name": "Average", "id": "bowl_average","hidden":True},
-			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},
-			        {"name": "Catches", "id": "catches","hidden":True},			        
+			        {"name": "Overs", "id": "overs"},
+			        {"name": "Wickets", "id": "wickets"},
+			        {"name": "Runs", "id": "bowl_runs"},
+			        {"name": "Average", "id": "bowl_average"},
+			        {"name": "Economy Rate", "id": "economy_rate"},
+			        {"name": "Strike Rate", "id": "bowl_strike_rate"},
+			        {"name": "Catches", "id": "catches"},			        
 			    ],
 			    style_cell_conditional=[
 					{'if': {'column_id': 'name'},
@@ -138,9 +137,9 @@ def getMasthead():
 				    'fontSize':20
 				},
 				editable=False,
-				n_fixed_rows=1,
-				sorting=True,
-				sorting_type="single",
+				fixed_rows={'headers':True, 'data':1},
+				sort_action='native',
+				sort_mode="single",
 				row_selectable="single",
 				selected_rows=[0],
 				style_as_list_view=True				
@@ -240,7 +239,7 @@ def getBattingDataTable(season,
 			strike_rate = round(100.0*float(runs)/float(balls_faced),2)
 		else:
 			strike_rate = 0.0
-		if season!="2019":
+		if season=="2018" or season == "All":
 			strike_rate = "-"
 
 		boundary_perc = 0.0
@@ -311,64 +310,33 @@ def getBattingDataTable(season,
 
 
 @app.callback(
-	Output('player-table', 'columns'),
+	Output('player-table', 'hidden_columns'),
 	[Input('discipline-selection', 'value')
 ])
 def playerTableColumns(discipline):
 	if discipline == "Batting":
 		return [
-			        {"name": "Name", "id": "name"},
-			        {"name": "Innings", "id": "innings"},
-			        {"name": "Runs", "id": "bat_runs"},
-			        {"name": "Average", "id": "bat_average"},
-			        {"name": "HS", "id": "top_score"},
-			        {"name": "Fours", "id": "fours"},
-			        {"name": "Sixes", "id": "sixes"},
-			        {"name": "Strike Rate", "id": "bat_strike_rate"},
-			        {"name": "Boundary %", "id": "boundary_perc"},
-			        {"name": "Overs", "id": "overs","hidden":True},
-			        {"name": "Wickets", "id": "wickets","hidden":True},
-			        {"name": "Runs", "id": "bowl_runs","hidden":True},
-			        {"name": "Average", "id": "bowl_average","hidden":True},
-			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True},
-			        {"name": "Catches", "id": "catches","hidden":True},			        			        
+			        "overs",
+			        "wickets",
+			        "bowl_runs",
+			        "bowl_average",
+			        "economy_rate",
+			        "bowl_strike_rate",
+			        "catches",			        			        
 			    ]
 	if discipline == "Bowling":
 		return [
-			        {"name": "Name", "id": "name"},
-			        {"name": "Innings", "id": "innings","hidden":True},
-			        {"name": "Runs", "id": "bat_runs","hidden":True},
-			        {"name": "Average", "id": "bat_average","hidden":True},
-			        {"name": "HS", "id": "top_score","hidden":True},
-			        {"name": "Fours", "id": "fours","hidden":True},
-			        {"name": "Sixes", "id": "sixes","hidden":True},
-			        {"name": "Strike Rate", "id": "bat_strike_rate","hidden":True},
-			        {"name": "Boundary %", "id": "boundary_perc","hidden":True},
-			        {"name": "Overs", "id": "overs"},
-			        {"name": "Wickets", "id": "wickets"},
-			        {"name": "Runs", "id": "bowl_runs"},
-			        {"name": "Average", "id": "bowl_average"},
-			        {"name": "Economy Rate", "id": "economy_rate"},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate"},		
-			        {"name": "Catches", "id": "catches"},			        	        
+			        "innings",
+			        "bat_runs",
+			        "bat_average",
+			        "top_score",
+			        "fours",
+			        "sixes",
+			        "bat_strike_rate",
+			        "boundary_perc",			        			        	        
 			    ]
 	return [
-			        {"name": "Name", "id": "name"},
-			        {"name": "Innings", "id": "innings","hidden":True},
-			        {"name": "Runs", "id": "bat_runs","hidden":True},
-			        {"name": "Average", "id": "bat_average","hidden":True},
-			        {"name": "HS", "id": "top_score","hidden":True},
-			        {"name": "Fours", "id": "fours","hidden":True},
-			        {"name": "Sixes", "id": "sixes","hidden":True},
-			        {"name": "Strike Rate", "id": "bat_strike_rate","hidden":True},
-			        {"name": "Boundary %", "id": "boundary_perc","hidden":True},
-			        {"name": "Overs", "id": "overs","hidden":True},
-			        {"name": "Wickets", "id": "wickets","hidden":True},
-			        {"name": "Runs", "id": "bowl_runs","hidden":True},
-			        {"name": "Average", "id": "bowl_average","hidden":True},
-			        {"name": "Economy Rate", "id": "economy_rate","hidden":True},
-			        {"name": "Strike Rate", "id": "bowl_strike_rate","hidden":True}
+			        "name"		       
 			]
 
 @app.callback(
@@ -465,7 +433,7 @@ def populateBattingStats(table_data,
 	fours = df_player['fours'].sum()
 	balls_faced = df_player['balls_faced'].sum()
 	strike_rate = 100.0*float(runs)/float(balls_faced)
-	if season!="2019":
+	if season=="2018" or season == "All":
 		strike_rate_md = dcc.Markdown("Strike Rate: -")
 	else:
 		strike_rate_md = dcc.Markdown("Strike Rate: " + "{:.2f}".format(strike_rate))

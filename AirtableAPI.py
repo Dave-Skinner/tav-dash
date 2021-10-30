@@ -14,13 +14,13 @@ def requestErrorCheck(method, *args):
 	try:
 		return method(*args)
 	except requests.exceptions.ConnectionError as e:
-		print e
-		print "Connection Error: Waiting 3 minutes from", datetime.datetime.now()
+		print (e)
+		print ("Connection Error: Waiting 3 minutes from", datetime.datetime.now())
 		time.sleep(180)
 		return requestErrorCheck(method,*args)
 	except requests.exceptions.ChunkedEncodingError as e:
-		print e
-		print "Chunked Encoding Error: Waiting 3 minutes from", datetime.datetime.now()
+		print (e)
+		print ("Chunked Encoding Error: Waiting 3 minutes from", datetime.datetime.now())
 		time.sleep(180)
 		return requestErrorCheck(method,*args)
 
@@ -34,14 +34,14 @@ class AirTable(Airtable):
 
 		response = requestErrorCheck(self.get,table)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.getAllTableRecords(table)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None				
@@ -53,14 +53,14 @@ class AirTable(Airtable):
 
 		response = requestErrorCheck(self.getAllTableRecordsFromOffset_,table,offset_id)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.getAllTableRecordsFromOffset(table,offset_id)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None				
@@ -76,14 +76,14 @@ class AirTable(Airtable):
 
 		response = requestErrorCheck(self.getAllTableViewRecords_,table,view)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.getAllTableViewRecords(table,view)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None				
@@ -98,14 +98,14 @@ class AirTable(Airtable):
 
 		response = requestErrorCheck(self.getAllTableViewRecordsFromOffset_,table,view,offset_id)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.getAllTableViewRecordsFromOffset(table,view,offset_id)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None				
@@ -121,14 +121,14 @@ class AirTable(Airtable):
 
 		response = requestErrorCheck(self.getSingleTableRecord_,table,record_id)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.getSingleTableRecord(table,record_id)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None				
@@ -142,14 +142,14 @@ class AirTable(Airtable):
 	def updateTableField(self, table, record_id, data):
 		response = requestErrorCheck(self.update, table, record_id, data)
 		if 'error' in response:			
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.updateTableField(table, record_id, data)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None
@@ -159,14 +159,14 @@ class AirTable(Airtable):
 	def createTableField(self, table, data):
 		response = requestErrorCheck(self.create, table, data)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.createTableField(table, data)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None			
@@ -176,14 +176,14 @@ class AirTable(Airtable):
 	def deleteTableField(self, table, record_id):
 		response = requestErrorCheck(self.delete, table, record_id)
 		if 'error' in response:
-			print response
+			print (response)
 			if 500 <= response["error"]['code'] <= 504:
-				print "Airtable connection error"
-				print "Waiting 5 minutes"
+				print ("Airtable connection error")
+				print ("Waiting 5 minutes")
 				time.sleep(300)
 				return self.deleteTableField(table, record_id)
 			elif response["error"]['code'] == 404:
-				print "Airtable Client Error"
+				print ("Airtable Client Error")
 				return None
 			else:
 				return None			
@@ -194,7 +194,7 @@ class AirTable(Airtable):
 				 record,
 				 field):
 		try:
-			return record["fields"][field].encode('utf-8')
+			return record["fields"][field]
 		except KeyError:
 			return ""
 		except AttributeError:
@@ -204,8 +204,8 @@ class AirTable(Airtable):
 
 		data_list = []
 		for record in all_records["records"]:
-			name = self.getField(record,'Name').encode('utf-8')
-			match = self.getField(record,'Match (String)').encode('utf-8')
+			name = self.getField(record,'Name')
+			match = self.getField(record,'Match (String)')
 			ta = datetime.datetime.strptime(self.getField(record,'Date')[0],"%Y-%m-%d")
 			date = datetime.datetime(ta.year,ta.month,ta.day,ta.hour,ta.minute)
 			try:
@@ -221,11 +221,11 @@ class AirTable(Airtable):
 			except ValueError:
 				sixes = None
 			batting_order = int(self.getField(record,'Batting Order'))
-			dismissal = self.getField(record,'Dismissal').encode('utf-8')
+			dismissal = self.getField(record,'Dismissal')
 			out_bool = int(self.getField(record,'Out'))
 			innings_bool = int(self.getField(record,'Innings'))
-			match_type = self.getField(record,'Match Type')[0].encode('utf-8')
-			season = self.getField(record,'Season')[0].encode('utf-8')
+			match_type = self.getField(record,'Match Type')[0]
+			season = self.getField(record,'Season')[0]
 			try:
 				balls_faced = int(self.getField(record,'Balls Faced'))
 			except ValueError:
@@ -235,8 +235,8 @@ class AirTable(Airtable):
 			except IndexError:
 				photo_url = None	
 
-			catcher = self.getField(record,'Catcher Name').encode('utf-8')
-			team = self.getField(record,'Team Name').encode('utf-8')
+			catcher = self.getField(record,'Catcher Name')
+			team = self.getField(record,'Team Name')
 
 			try:
 				fow_runs = int(self.getField(record,'Fall of Wicket (Runs)'))
@@ -275,7 +275,7 @@ class AirTable(Airtable):
 		all_records = self.getAllTableViewRecords("BATTING","viwgwYkOLRMiPvJ1J")
 		data_list = self.getBattingData(all_records)
 		if 'offset' in all_records:
-			offset = all_records['offset'].encode('utf-8')
+			offset = all_records['offset']
 		else:
 			offset = None
 		while offset:
@@ -284,7 +284,7 @@ class AirTable(Airtable):
 			data_list.extend(temp_data_list)
 		
 			if 'offset' in all_records:
-				offset = all_records['offset'].encode('utf-8')
+				offset = all_records['offset']
 			else:
 				break
 
@@ -312,8 +312,8 @@ class AirTable(Airtable):
 
 		data_list = []
 		for record in all_records["records"]:
-			name = self.getField(record,'Name').encode('utf-8')
-			match = self.getField(record,'Match (String)').encode('utf-8')
+			name = self.getField(record,'Name')
+			match = self.getField(record,'Match (String)')
 			ta = datetime.datetime.strptime(self.getField(record,'Date')[0],"%Y-%m-%d")
 			date = datetime.datetime(ta.year,ta.month,ta.day,ta.hour,ta.minute)
 			try:
@@ -351,13 +351,13 @@ class AirTable(Airtable):
 			bowling_order = int(self.getField(record,'Bowling Order'))
 			dismissal_types = self.getField(record,'Dismissal Types')
 			#print dismissal_types
-			match_type = self.getField(record,'Match Type')[0].encode('utf-8')
-			season = self.getField(record,'Season')[0].encode('utf-8')
+			match_type = self.getField(record,'Match Type')[0]
+			season = self.getField(record,'Season')[0]
 			try:
 				photo_url = self.getField(record,'Photo')[0]["url"]
 			except IndexError:
 				photo_url = None
-			team = self.getField(record,'Team Name').encode('utf-8')
+			team = self.getField(record,'Team Name')
 
 			data_list.append([name,
 							  match,
@@ -385,7 +385,7 @@ class AirTable(Airtable):
 		all_records = self.getAllTableViewRecords("BOWLING","viwO4s1Ne5LcS9pG5")
 		data_list = self.getBowlingData(all_records)
 		if 'offset' in all_records:
-			offset = all_records['offset'].encode('utf-8')
+			offset = all_records['offset']
 		else:
 			offset = None
 		while offset:
@@ -394,7 +394,7 @@ class AirTable(Airtable):
 			data_list.extend(temp_data_list)
 		
 			if 'offset' in all_records:
-				offset = all_records['offset'].encode('utf-8')
+				offset = all_records['offset']
 			else:
 				break
 
@@ -423,12 +423,12 @@ class AirTable(Airtable):
 
 		data_list = []
 		for record in all_records["records"]:
-			opposition = self.getField(record,'Opposition').encode('utf-8')
+			opposition = self.getField(record,'Opposition')
 			ta = datetime.datetime.strptime(self.getField(record,'Date'),"%Y-%m-%d")
 			date = datetime.datetime(ta.year,ta.month,ta.day,ta.hour,ta.minute)
-			ground = self.getField(record,'Ground (String)').encode('utf-8')
-			result = self.getField(record,'Result').encode('utf-8')
-			bat_first = self.getField(record,'Bat First').encode('utf-8')
+			ground = self.getField(record,'Ground (String)')
+			result = self.getField(record,'Result')
+			bat_first = self.getField(record,'Bat First')
 			try:
 				tav_runs = int(self.getField(record,'Tav Runs'))
 			except ValueError:
@@ -445,10 +445,10 @@ class AirTable(Airtable):
 				oppo_wickets_down = int(self.getField(record,'Oppo Wickets Down'))
 			except ValueError:
 				oppo_wickets_down = None
-			match_type = self.getField(record,'Match Type').encode('utf-8')
-			season = self.getField(record,'Season').encode('utf-8')
-			captains_tankard = self.getField(record,'Captains Tankard (String)').encode('utf-8')
-			match_report = self.getField(record,'Match Report')#.encode('utf-8')		
+			match_type = self.getField(record,'Match Type')
+			season = self.getField(record,'Season')
+			captains_tankard = self.getField(record,'Captains Tankard (String)')
+			match_report = self.getField(record,'Match Report')#		
 			
 
 			data_list.append([opposition,
@@ -472,7 +472,7 @@ class AirTable(Airtable):
 		all_records = self.getAllTableViewRecords("MATCHES","viwETmTbL8do9Ur1c")
 		data_list = self.getMatchesData(all_records)
 		if 'offset' in all_records:
-			offset = all_records['offset'].encode('utf-8')
+			offset = all_records['offset']
 		else:
 			offset = None
 		while offset:
@@ -481,7 +481,7 @@ class AirTable(Airtable):
 			data_list.extend(temp_data_list)
 		
 			if 'offset' in all_records:
-				offset = all_records['offset'].encode('utf-8')
+				offset = all_records['offset']
 			else:
 				break
 

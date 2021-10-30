@@ -8,7 +8,7 @@ import os
 import json
 
 import AirtableAPI as airtable
-import functools32
+from flask_caching import Cache
 
 
 local_version = False
@@ -22,18 +22,25 @@ if local_version:
     at_config = json.load(config_file)
     config_file.close()
     app = dash.Dash('Tav Dash')
-    app.config.supress_callback_exceptions = True
+    app.config.suppress_callback_exceptions = True
 else:
     server = Flask('Tav Dash')
     server.secret_key = os.environ.get('secret_key', 'secret')
     at_config={}
     app = dash.Dash('Tav Dash', server=server)
-    app.config.supress_callback_exceptions = True   
+    app.config.suppress_callback_exceptions = True   
     at_config["base_id"]=os.environ["base_id"]
     at_config["api_key"]=os.environ["airtable_api_key"]
 
 
-@functools32.lru_cache(maxsize=32)
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory'
+})
+timeout = 360
+
+
+@cache.memoize(timeout=timeout)
 def getBattingDataframe():
     #print at_config
     batting_airtable = airtable.AirTable(at_config)
@@ -41,7 +48,7 @@ def getBattingDataframe():
     df = batting_airtable.getAllBattingDataFromBattingTable()
     return df
 
-@functools32.lru_cache(maxsize=32)
+@cache.memoize(timeout=timeout)
 def getBowlingDataframe():
     #print at_config
     bowling_airtable = airtable.AirTable(at_config)
@@ -49,7 +56,7 @@ def getBowlingDataframe():
     df = bowling_airtable.getAllBowlingDataFromBowlingTable()
     return df
 
-@functools32.lru_cache(maxsize=32)
+@cache.memoize(timeout=timeout)
 def getMatchesDataframe():
     #print at_config
     matches_airtable = airtable.AirTable(at_config)
@@ -57,7 +64,7 @@ def getMatchesDataframe():
     df = matches_airtable.getAllMatchDataFromMatchesTable()
     return df
 
-print "FUCK THIS SHIT"
+#print "FUCK THIS SHIT"
 
 
 app.index_string = '''
