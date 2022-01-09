@@ -2,9 +2,9 @@
 from flask import Flask
 import dash
 from dash.dependencies import Input, Output, State
-import dash_core_components as dcc
-import dash_html_components as html
-import dash_table as dt
+from dash import dcc
+from dash import html
+from dash import dash_table
 import pandas as pd
 import plotly.graph_objs as go
 
@@ -67,7 +67,7 @@ def getMasthead():
 			id='inter-tav-selection-div'
 		),
 		html.Div([
-			dt.DataTable(
+			dash_table.DataTable(
 				id='player-table',
 				columns=[
 			        {"name": "Name", "id": "name"},
@@ -224,6 +224,7 @@ def getBattingDataTable(season,
 	for player in df_batting['name'].unique():
 		df_player = df_batting[df_batting['name'] == player]
 		innings = df_player['innings_bool'].sum()
+		print (df_player['runs'])
 		runs = df_player['runs'].sum()
 		top_score = df_player['runs'].max()
 		outs = df_player['out_bool'].sum()
@@ -482,7 +483,7 @@ def getBarChart(words,
 	data = [go.Bar(
 			    y=words,
 			    x=weights,
-			    text=words,
+			    #text=words,
 			    orientation = 'h',
 			    marker = dict(
 			        color = 'rgba(6,193,95, 1.0)',
@@ -862,7 +863,9 @@ def updateBowlingDismissalMethods(table_data,
 
 	if df_player.empty: return None
 
-	mod_list = [item for sublist in df_player['dismissal_types'].tolist() for item in sublist]
+	dis_types_df = df_player['dismissal_types'].dropna()
+	#print (dis_types)
+	mod_list = [item for sublist in dis_types_df.tolist() for item in sublist]
 	counter=collections.Counter(mod_list)
 	most_common = counter.most_common(6)
 

@@ -6,6 +6,7 @@ import dash
 import sys
 import os
 import json
+import pandas as pd
 
 import AirtableAPI as airtable
 from flask_caching import Cache
@@ -42,29 +43,40 @@ timeout = 360
 
 @cache.memoize(timeout=timeout)
 def getBattingDataframe():
-    #print at_config
-    batting_airtable = airtable.AirTable(at_config)
+    at = airtable.TavsAirTable(at_config)
+    data = at.getAllAirtableRecordsFromTableView(at.batting_table,
+                                                 at.batting_table.tavs_innings_view)
 
-    df = batting_airtable.getAllBattingDataFromBattingTable()
+    columns = at.batting_table.Record().fields.keys()
+    data_list = [[record.fields[x].value for x in columns] for record in data]
+    df = pd.DataFrame(data_list, columns=columns)
+
     return df
 
 @cache.memoize(timeout=timeout)
 def getBowlingDataframe():
-    #print at_config
-    bowling_airtable = airtable.AirTable(at_config)
+    at = airtable.TavsAirTable(at_config)
+    data = at.getAllAirtableRecordsFromTableView(at.bowling_table,
+                                                 at.bowling_table.tavs_innings_view)
 
-    df = bowling_airtable.getAllBowlingDataFromBowlingTable()
+    columns = at.bowling_table.Record().fields.keys()
+    data_list = [[record.fields[x].value for x in columns] for record in data]
+    df = pd.DataFrame(data_list, columns=columns)
+
     return df
 
 @cache.memoize(timeout=timeout)
 def getMatchesDataframe():
-    #print at_config
-    matches_airtable = airtable.AirTable(at_config)
+    at = airtable.TavsAirTable(at_config)
+    data = at.getAllAirtableRecordsFromTableView(at.matches_table,
+                                                 at.matches_table.tavs_matches_view)
 
-    df = matches_airtable.getAllMatchDataFromMatchesTable()
+    columns = at.matches_table.Record().fields.keys()
+    data_list = [[record.fields[x].value for x in columns] for record in data]
+    df = pd.DataFrame(data_list, columns=columns)
+
     return df
 
-#print "FUCK THIS SHIT"
 
 
 app.index_string = '''

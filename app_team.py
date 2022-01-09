@@ -2,9 +2,9 @@
 from flask import Flask
 import dash
 from dash.dependencies import Input, Output, State
-import dash_core_components as dcc
-import dash_html_components as html
-import dash_table as dt
+from dash import dcc
+from dash import html
+from dash import dash_table
 import pandas as pd
 import plotly.graph_objs as go
 import numpy as np
@@ -75,7 +75,7 @@ def getTeamMasthead():
 					id='inter-tav-selection-div-team'
 				),
 				html.Div([
-					dt.DataTable(
+					dash_table.DataTable(
 						id='team-table',
 						columns=[
 					        {"name": "Date", "id": "date"},
@@ -162,6 +162,8 @@ def getTeamDataTable(season,
 						inter_tav_type):
 
 	df_team = getMatchesDataframe()
+	#print (df_team)
+	#df_team.to_csv('temp_team.csv')
 
 	if season:
 		if season != "All":
@@ -227,7 +229,7 @@ def getTeamDataTable(season,
 def teamTableRender(season,
 					 match_type,
 					 inter_tav_type):
-	print (match_type)
+	#print (match_type)
 	return getTeamDataTable(season, match_type,inter_tav_type)
 
 
@@ -253,6 +255,8 @@ def populateMatchStats(table_data,
 	df_team = getMatchesDataframe()
 	df_batting = getBattingDataframe()
 	df_bowling = getBowlingDataframe()
+	df_batting.to_csv('temp_batting.csv')
+	df_bowling.to_csv('temp_bowling.csv')
 	
 	try:
 		match_date = table_data[match_row[0]]['date']
@@ -274,6 +278,7 @@ def populateMatchStats(table_data,
 
 	oppo = df_team['opposition']#table_data[match_row[0]]['opposition'][0]
 
+	df_top_scores = df_batting[df_batting['runs']!='']
 	df_top_scores = df_batting.nlargest(2, ['runs']) 
 	try:
 		df_top_score_1 = df_top_scores.iloc[0]
@@ -375,7 +380,7 @@ def updateMatchInningsTimeline(table_data,
 	
 	try:
 		match_date = table_data[match_row[0]]['date']
-		print (match_date)
+		#print (match_date)
 		df_innings = df_batting[df_batting['date'] == match_date[0]]#df_batting.iloc[match_date[0]]["date"]
 		#print "Innings",innings
 	except (IndexError, TypeError):
@@ -401,8 +406,8 @@ def updateMatchInningsGraph(df_match):
 		tav_overs = [0.0] + df_tavs["fow_overs"].values.tolist()
 		tav_overs = [x for x in tav_overs if str(x) != 'nan']
 		tav_overs.sort()
-		print (tav_runs)
-		print (tav_overs)
+		#print (tav_runs)
+		#print (tav_overs)
 		data.append(go.Scatter( x=tav_overs,
 					    y=tav_runs,
 					    mode='lines+markers',
